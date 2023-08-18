@@ -10,3 +10,4 @@ test.py
 models
 .ipynb_checkpoints
 docs/docs/build
+.vscode

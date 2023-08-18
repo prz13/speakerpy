@@ -1,16 +1,7 @@
 import argparse
 import pathlib
 
-settings_selero = {
-    "ru": {
-        "sample_rate": 48000,
-        "sp": dict(model_id="ru_v3", language="ru", speaker="aidar", device="cpu"),
-    },
-    "en": {
-        "sample_rate": 48000,
-        "sp": dict(model_id="v3_en", language="en", speaker="en_6", device="cpu"),
-    },
-}
+from .lib_helper import settings_selero
 
 
 def main(args):
@@ -56,7 +47,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-l",
         "--language",
-        choices=["ru", "en"],
+        choices=list(settings_selero.keys()),
         required=True,
         help=f"{y}Язык синтеза (ru | en){r}",
     )

@@ -123,6 +123,8 @@ class Speaker(SpeakerBase):
     ):
         """Синтезировать и воспроизвести звук
 
+        Использовать для большого текста
+
         text         : Текст который нужно озвучить
         sample_rate  : Частота дискретизации(качество), у каждой модели свои доступные значения
         speed        : Скорость воспроизведения звука [от 1.0 до 2.0]
@@ -141,6 +143,35 @@ class Speaker(SpeakerBase):
                     put_yo=put_yo,
                 )
                 executor.submit(self._speak, i, _chunk_text, audio, sample_rate, speed)
+
+    @timeit
+    def speak_stream(
+        self,
+        text: str,
+        sample_rate: int,
+        speed=1.0,
+        *,
+        put_accent: bool = True,
+        put_yo: bool = True,
+    ):
+        """Синтезировать и воспроизвести звук
+
+        Использовать для быстрого воспроизведения в режиме реального времени
+
+        text         : Текст который нужно озвучить
+        sample_rate  : Частота дискретизации(качество), у каждой модели свои доступные значения
+        speed        : Скорость воспроизведения звука [от 1.0 до 2.0]
+        put_accent   : Флаг автоматической простановки ударения;
+        put_yo       : Флаг автоматической простановки буквы ё;
+        """
+        # Синтезируем и озвучиваем текст по кускам
+        audio: torch.Tensor = self._synthesize_text(
+            text,
+            sample_rate=sample_rate,
+            put_accent=put_accent,
+            put_yo=put_yo,
+        )
+        self._speak(0, text, audio, sample_rate, speed)
 
     @timeit
     def to_mp3(

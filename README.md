@@ -108,7 +108,7 @@ options:
                         Папка для сохранения готовых аудио файлов (по умолчанию: текущая папка)
 
 Примеры использования:
-  python -m speakerpy -l ru -t speak -f ./books/example.txt;
+  python -m speakerpy -l ru -t speak -f ./books/example.txt -s 1.2;
   python -m speakerpy -l ru -t mp3 -f ./books/example.txt;
   python -m speakerpy -l en -t speak -f ./books/example.txt;
   python -m speakerpy -l en -t mp3 -f ./books/example.txt;
