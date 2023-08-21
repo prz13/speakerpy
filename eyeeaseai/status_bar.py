@@ -1,12 +1,13 @@
-import pyautogui
-import numpy as np
+import threading
 import time
-import cv2
+import tkinter as tk
 from datetime import datetime
 from pathlib import Path
-import threading
+
+import cv2
 import keyboard
-import tkinter as tk
+import numpy as np
+import pyautogui
 
 
 class StatusBar(tk.Tk):
