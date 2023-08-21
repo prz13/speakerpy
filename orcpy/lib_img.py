@@ -1,14 +1,23 @@
+import re
+
 import cv2
 import numpy as np
 import pytesseract
-import re
-import cv2
-
 from gamesettings import SettingGame
 
 
-def crop_image(image, bottom_percentage=25, width_percentage=10):
-    """Функция для обрезания изображения"""
+def crop_image_percentage(image: np.ndarray, bottom_percentage=25, width_percentage=10):
+    """
+    Обрезает изображение с указанными процентами снизу и с боков.
+
+    Args:
+        image (numpy.ndarray): Исходное изображение.
+        bottom_percentage (int, optional): Процент обрезания снизу. По умолчанию 25.
+        width_percentage (int, optional): Процент обрезания с боков. По умолчанию 10.
+
+    Returns:
+        numpy.ndarray: Обрезанное изображение.
+    """
     # Получение высоты и ширины изображения
     height, width = image.shape[:2]
 
@@ -26,13 +35,17 @@ def crop_image(image, bottom_percentage=25, width_percentage=10):
     return cropped_image
 
 
-def keep_color(image, color_hex="#ffffff", tolerance=90):
+def extract_color(image: np.ndarray, color_hex="#ffffff", tolerance=90):
     """
-    Функция которая оставляет на изображениям только указанный цвет
-    (возможно указать погрешность цвета который можно отсавить в аргумент tolerance)
+    Оставляет только указанный цвет на изображении с заданной погрешностью.
 
-    color_hex: Цвет, который нужно оставить
-    tolerance: Допустимое отклонение от заданного цвета
+    Args:
+        image (numpy.ndarray): Исходное изображение.
+        color_hex (str, optional): Цвет в HEX-формате (например, "#ffffff").
+        tolerance (int, optional): Допустимое отклонение цвета. По умолчанию 90.
+
+    Returns:
+        numpy.ndarray: Изображение с оставленным цветом.
     """
     # Преобразование цвета из HEX в RGB
     color = tuple(int(color_hex[i : i + 2], 16) for i in (1, 3, 5))
@@ -51,13 +64,17 @@ def keep_color(image, color_hex="#ffffff", tolerance=90):
     return result
 
 
-def remove_color(image, color_hex="#ffffff", tolerance=90):
+def remove_color_tolerant(image: np.ndarray, color_hex="#ffffff", tolerance=90):
     """
-    Функция, которая удаляет из изображения указанный цвет
-    (возможно указать погрешность цвета, который можно удалить, в аргументе tolerance)
+    Удаляет указанный цвет из изображения с заданной погрешностью.
 
-    color_hex: Цвет, который нужно удалить
-    tolerance: Допустимое отклонение от заданного цвета
+    Args:
+        image (numpy.ndarray): Исходное изображение.
+        color_hex (str, optional): Цвет в HEX-формате (например, "#ffffff").
+        tolerance (int, optional): Допустимое отклонение цвета. По умолчанию 90.
+
+    Returns:
+        numpy.ndarray: Изображение без указанного цвета.
     """
     # Преобразование цвета из HEX в RGB
     color = tuple(int(color_hex[i : i + 2], 16) for i in (1, 3, 5))
@@ -79,9 +96,15 @@ def remove_color(image, color_hex="#ffffff", tolerance=90):
     return result
 
 
-def invert_colors(image):
+def invert_image_colors(image: np.ndarray):
     """
-    Функция, которая инвертирует все цвета на изображении
+    Инвертирует цвета на изображении.
+
+    Args:
+        image (numpy.ndarray): Исходное изображение.
+
+    Returns:
+        numpy.ndarray: Инвертированное изображение.
     """
     # Инвертирование цветов с помощью вычитания значений каждого пикселя из 255
     inverted_image = 255 - image
@@ -89,33 +112,63 @@ def invert_colors(image):
     return inverted_image
 
 
-def orc_text(image, setting_game: SettingGame):
+def perform_ocr(image: np.ndarray):
     """
-    Распознать текст на изображение
+    Распознает текст на изображении с помощью библиотеки Tesseract.
+
+    Args:
+        image (numpy.ndarray): Исходное изображение.
+
+    Returns:
+        str: Распознанный текст.
+    """
+    results = pytesseract.image_to_string(image, lang="rus")
+    return results
+
+
+def recognize_text_with_settings(image: np.ndarray, setting_game: SettingGame):
+    """
+    Распознает текст на изображении с заданными настройками игры.
+
+    Args:
+        image (numpy.ndarray): Исходное изображение с текстом.
+        setting_game (SettingGame): Настройки игры.
+
+    Returns:
+        tuple: Кортеж из распознанного текста и изображения после обработки.
     """
     st = setting_game.value
 
     # Вызов функции для обрезания изображения
-    cropped_image = crop_image(
+    cropped_image = crop_image_percentage(
         image,
         bottom_percentage=st["bottom_percentage"],
         width_percentage=st["width_percentage"],
     )
     # Оставить только белый цвет субтитров
-    bg_image = keep_color(
+    bg_image = extract_color(
         cropped_image, color_hex=st["keep_color_hex"], tolerance=st["keep_tolerance"]
     )
 
     # Инвертировать белый цвет в черный, потому что OCR чаще обучается на черном тексте а не на белом
-    in_image = invert_colors(bg_image)
+    in_image = invert_image_colors(bg_image)
 
     r_img = in_image
     # Распознавание текста
-    res_orc_text = logic_recognize(r_img)
+    res_orc_text = perform_ocr(r_img)
     return res_orc_text, r_img
 
 
-def filter_text(text: str) -> str:
+def extract_character_dialogue(text: str) -> str:
+    """
+    Фильтрует и обрабатывает распознанный текст, оставляя только реплику персонажа.
+
+    Args:
+        text (str): Распознанный текст.
+
+    Returns:
+        str: Обработанная реплика персонажа.
+    """
     # print(f"до text={text}")
     # Взять из текста только реплику персонажа
     text_obj = [
@@ -150,9 +203,3 @@ def filter_text(text: str) -> str:
 
     text_obj["replic"] = replic.strip()
     return text_obj
-
-
-def logic_recognize(image):
-    """Распознать текс на изображение"""
-    results = pytesseract.image_to_string(image, lang="rus")
-    return results
