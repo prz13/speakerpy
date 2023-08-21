@@ -9,6 +9,8 @@ import keyboard
 import numpy as np
 import pyautogui
 
+# pip install opencv-python keyboard pyautogui silero pytesseract
+
 
 class StatusBar(tk.Tk):
     def __init__(self, *args, **kwargs):
@@ -18,50 +20,51 @@ class StatusBar(tk.Tk):
         self.overrideredirect(True)
         self.geometry("+10+10")
         self.wm_attributes("-topmost", True)
-        self.wm_attributes("-alpha", 0.7)
-        # self.wm_attributes("-transparentcolor", "white")
+        self.wm_attributes("-transparentcolor", "white")
 
     def set_status(self, status):
         self.label.config(text=status)
 
 
-def take_screenshot(status_bar):
-    # Предполагая, что класс EyeEaseAi и его методы определены где-то в коде
-    # ea = EyeEaseAi(setting_game=SettingGame.baldur_gate_3)
+dir_scrinshot = Path(__file__).parent / "screenshots"
+is_running = False
 
+
+def take_screenshot(status_bar):
+    global is_running
+    i = 0
     while True:
-        if not keyboard.is_pressed(
-            "ctrl+alt+s"
-        ):  # Замените на нужное сочетание клавиш для остановки
+        if is_running:
+            print(i)
             screenshot = pyautogui.screenshot()
             screenshot_np = np.array(screenshot)
-            # res_text, res_image = ea.orc_img(screenshot_np)
-            file_path = (
-                Path(__file__).parent
-                / "screenshots"
-                / f"screenshots_{datetime.now().isoformat()}.png"
-            )
+            i += 1
+            file_path = dir_scrinshot / f"screenshots_{i}.png"
             cv2.imwrite(str(file_path), screenshot_np)
             time.sleep(0.5)
-        else:
-            status_bar.set_status("Остановлено")
-            break
+
+
+def toggle_screenshot(status_bar):
+    global is_running
+    is_running = not is_running
+    status_bar.set_status("Запущено" if is_running else "Остановлено")
 
 
 def main():
+    global is_running
     status_bar = StatusBar()
-    status_bar.set_status("Запущено")
+    status_bar.set_status("Остановлено")
 
-    t = threading.Thread(target=take_screenshot, args=(status_bar,))
+    keyboard.add_hotkey("ctrl+alt+s", lambda: toggle_screenshot(status_bar))
+
+    t = threading.Thread(target=take_screenshot, args=(status_bar,), daemon=True)
     t.start()
 
     def stop():
         keyboard.press_and_release("ctrl+alt+s")
         status_bar.destroy()
 
-    keyboard.add_hotkey(
-        "ctrl+alt+q", stop
-    )  # Замените на нужное сочетание клавиш для выхода
+    keyboard.add_hotkey("ctrl+alt+q", stop)
 
     status_bar.mainloop()
     t.join()

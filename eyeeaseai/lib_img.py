@@ -11,6 +11,9 @@ import numpy as np
 # pip install pyautogui
 import pyautogui
 import pytesseract
+
+pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+
 from gamesettings import SettingGame
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -189,13 +192,16 @@ def extract_character_dialogue(text: str) -> str:
     # Взять из текста только реплику персонажа
     text_obj = [
         x.groupdict()
-        for x in re.finditer(r"(?P<name>[\w\d]+): (?P<replica>(?:.(?!\.\\n))+.)", text)
+        for x in re.finditer(
+            r"(?P<name>[\w\d]+): (?P<replica>(?:.(?!\.\t))+.)", text.replace("\n", "\t")
+        )
     ]
     if len(text_obj) > 1:
         raise KeyError("Не может быть больше одной реплики")
     text_obj = text_obj[0]
 
     replica = text_obj["replica"]
+    replica = replica.replace("\t", " ")
 
     # Применение таблицы трансляции
     replica = replica.translate(
@@ -217,34 +223,36 @@ def extract_character_dialogue(text: str) -> str:
     # Замена неправильно распознанных слов
     replica = replica.replace("Уйш", "Уйти")
 
+    # Добавить в конец точку
+    replica += "."
     text_obj["replica"] = replica.strip()
     return text_obj
 
 
-def take_screenshot():
-    """Делать скриншоты
+# def take_screenshot():
+#     """Делать скриншоты
 
 
-    Для Linux нужно дополнительно установить `sudo apt-get install scrot`
-    """
-    ea = EyeEaseAi(setting_game=SettingGame.baldur_gate_3)
+#     Для Linux нужно дополнительно установить `sudo apt-get install scrot`
+#     """
+#     ea = EyeEaseAi(setting_game=SettingGame.baldur_gate_3)
 
-    while True:
-        screenshot = pyautogui.screenshot()
-        screenshot_np = np.array(screenshot)
-        # res_text, res_image = ea.orc_img(
-        #     screenshot_np
-        # )  # Передача скриншота в функцию orc_img
-        cv2.imwrite(
-            str(
-                Path(__file__).parent
-                / "screenshots"
-                / f"screenshots_{datetime.now().isoformat()}.png"
-            ),
-            screenshot_np,
-        )
-        # Пауза в 0.5 секунды
-        time.sleep(0.5)
+#     while True:
+#         screenshot = pyautogui.screenshot()
+#         screenshot_np = np.array(screenshot)
+#         # res_text, res_image = ea.orc_img(
+#         #     screenshot_np
+#         # )  # Передача скриншота в функцию orc_img
+#         cv2.imwrite(
+#             str(
+#                 Path(__file__).parent
+#                 / "screenshots"
+#                 / f"screenshots_{datetime.now().isoformat()}.png"
+#             ),
+#             screenshot_np,
+#         )
+#         # Пауза в 0.5 секунды
+#         time.sleep(0.5)
 
 
 class Dialog(TypedDict):
@@ -259,6 +267,7 @@ class EyeEaseAi:
         self.last_res_orc: Dialog = None
         self.speaker_obj = Speaker(**settings_selero["ru_man"]["sp"])
         self.sample_rate = settings_selero["ru_man"]["sample_rate"]
+        self.setting_game = setting_game
 
     def orc_img(self, image: np.ndarray) -> tuple[str, np.array]:
         """Распознать текст на изображение
