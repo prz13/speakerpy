@@ -1,4 +1,5 @@
 import re
+from typing import NamedTuple, TypedDict
 
 import cv2
 import numpy as np
@@ -175,16 +176,16 @@ def extract_character_dialogue(text: str) -> str:
     # Взять из текста только реплику персонажа
     text_obj = [
         x.groupdict()
-        for x in re.finditer(r"(?P<name>[\w\d]+): (?P<replic>(?:.(?!\.\\n))+.)", text)
+        for x in re.finditer(r"(?P<name>[\w\d]+): (?P<replica>(?:.(?!\.\\n))+.)", text)
     ]
     if len(text_obj) > 1:
         raise KeyError("Не может быть больше одной реплики")
     text_obj = text_obj[0]
 
-    replic = text_obj["replic"]
+    replica = text_obj["replica"]
 
     # Применение таблицы трансляции
-    replic = replic.translate(
+    replica = replica.translate(
         # Создание таблицы трансляции для замены цифр на слова
         str.maketrans(
             {
@@ -201,16 +202,37 @@ def extract_character_dialogue(text: str) -> str:
     )
 
     # Замена неправильно распознанных слов
-    replic = replic.replace("Уйш", "Уйти")
+    replica = replica.replace("Уйш", "Уйти")
 
-    text_obj["replic"] = replic.strip()
+    text_obj["replica"] = replica.strip()
     return text_obj
 
 
-def game_orc(image: np.ndarray, setting_game=SettingGame) -> tuple[str, np.array]:
-    # Распознать текст на изображение
-    res_text, res_image = recognize_text_with_settings(image, setting_game=setting_game)
-    filter_text = extract_character_dialogue(res_text)
-    return filter_text, res_image
+class Dialog(TypedDict):
+    name: str
+    replica: str
 
 
+class EyeEaseAi:
+    def __init__(self) -> None:
+        # Прошлое значение распознавание текста
+        # Оно нужно для того чтобы повторно, еденивроенно не озвучивать текст
+        self.last_res_orc: Dialog = None
+
+    def orc_img(
+        self, image: np.ndarray, setting_game=SettingGame
+    ) -> tuple[str, np.array]:
+        """Распознать текст на изображение
+
+        return: Распознанный текст
+        """
+        res_text, res_image = recognize_text_with_settings(
+            image, setting_game=setting_game
+        )
+        # Удалить лишние символы из ответа
+        filter_dialog = extract_character_dialogue(res_text)
+        # Если распознан новый текст, то возвратим его для дальнейшего озвучивания
+        if self.last_res_orc != filter_dialog:
+            return filter_dialog, res_image
+        else:
+            return None, None
