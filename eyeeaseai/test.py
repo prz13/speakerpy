@@ -3,7 +3,7 @@ import time
 import cv2
 import numpy as np
 from gamesettings import SettingGame
-from lib_img import Dialog, EyeEaseAi
+from lib_img import Dialog, EyeEaseAi, take_screenshot
 
 TEST_PHOTO: dict[str, Dialog] = {
     "7sO8N6tAm6.jpg": {"name": "Иерле", "replica": "Тебе тут делать нечего."},
@@ -34,7 +34,7 @@ def main():
     dirs = "/home/denis/DISK/MyProject/speakerpy/eyeeaseai/img/"
     dirs_out = "/home/denis/DISK/MyProject/speakerpy/eyeeaseai/img_res/"
 
-    ea = EyeEaseAi()
+    ea = EyeEaseAi(setting_game=SettingGame.baldur_gate_3)
     for k, rais_value in TEST_PHOTO.items():
         # Прочитанное изображение
         input_image: np.ndarray = cv2.imread(dirs + k)
@@ -42,9 +42,7 @@ def main():
         print("Start: ")
         start_time = time.time()
         # Распознать текст на изображение
-        res_text, res_image = ea.orc_img(
-            input_image, setting_game=SettingGame.baldur_gate_3
-        )
+        res_text, res_image = ea.orc_img(input_image)
         print(f"END: execution_time={time.time() - start_time}")
         # >>>>>>>>>>>>>>>>>>>>>.
         if res_text != rais_value:
@@ -53,14 +51,7 @@ def main():
         # Сохранение итоговое изображения, на котором было произведено распознование текста
         cv2.imwrite(dirs_out + f"res_{k}", res_image)
 
-        # Озвучить текст
-        # sp = Speaker(**settings_selero["ru_man"]["sp"])
-        # sp.speak_stream(
-        #     filter_res,
-        #     sample_rate=settings_selero["ru_man"]["sample_rate"],
-        #     speed=1.2,
-        # )
-
 
 if __name__ == "__main__":
-    main()
+    # main()
+    take_screenshot()

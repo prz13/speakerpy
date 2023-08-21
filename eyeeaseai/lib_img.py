@@ -1,10 +1,23 @@
+from datetime import datetime
 import re
-from typing import NamedTuple, TypedDict
+import sys
+from pathlib import Path
+import time
+from typing import TypedDict
 
 import cv2
 import numpy as np
+
+# pip install pyautogui
+import pyautogui
 import pytesseract
 from gamesettings import SettingGame
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
+
+from speakerpy.lib_helper import settings_selero
+from speakerpy.lib_speak import Speaker
 
 
 def crop_image_percentage(image: np.ndarray, bottom_percentage=25, width_percentage=10):
@@ -208,26 +221,52 @@ def extract_character_dialogue(text: str) -> str:
     return text_obj
 
 
+def take_screenshot():
+    """Делать скриншоты
+
+
+    Для Linux нужно дополнительно установить `sudo apt-get install scrot`
+    """
+    ea = EyeEaseAi(setting_game=SettingGame.baldur_gate_3)
+
+    while True:
+        screenshot = pyautogui.screenshot()
+        screenshot_np = np.array(screenshot)
+        # res_text, res_image = ea.orc_img(
+        #     screenshot_np
+        # )  # Передача скриншота в функцию orc_img
+        cv2.imwrite(
+            str(
+                Path(__file__).parent
+                / "screenshots"
+                / f"screenshots_{datetime.now().isoformat()}.png"
+            ),
+            screenshot_np,
+        )
+        # Пауза в 0.5 секунды
+        time.sleep(0.5)
+
+
 class Dialog(TypedDict):
     name: str
     replica: str
 
 
 class EyeEaseAi:
-    def __init__(self) -> None:
+    def __init__(self, setting_game=SettingGame) -> None:
         # Прошлое значение распознавание текста
         # Оно нужно для того чтобы повторно, еденивроенно не озвучивать текст
         self.last_res_orc: Dialog = None
+        self.speaker_obj = Speaker(**settings_selero["ru_man"]["sp"])
+        self.sample_rate = settings_selero["ru_man"]["sample_rate"]
 
-    def orc_img(
-        self, image: np.ndarray, setting_game=SettingGame
-    ) -> tuple[str, np.array]:
+    def orc_img(self, image: np.ndarray) -> tuple[str, np.array]:
         """Распознать текст на изображение
 
         return: Распознанный текст
         """
         res_text, res_image = recognize_text_with_settings(
-            image, setting_game=setting_game
+            image, setting_game=self.setting_game
         )
         # Удалить лишние символы из ответа
         filter_dialog = extract_character_dialogue(res_text)
@@ -236,3 +275,11 @@ class EyeEaseAi:
             return filter_dialog, res_image
         else:
             return None, None
+
+    def speak(self, text: str):
+        """Озвучить текст"""
+        self.speaker_obj.speak_stream(
+            text,
+            sample_rate=self.sample_rate,
+            speed=1.2,
+        )
