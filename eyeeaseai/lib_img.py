@@ -126,7 +126,9 @@ def perform_ocr(image: np.ndarray):
     return results
 
 
-def recognize_text_with_settings(image: np.ndarray, setting_game: SettingGame):
+def recognize_text_with_settings(
+    image: np.ndarray, setting_game: SettingGame
+) -> tuple[str, np.array]:
     """
     Распознает текст на изображении с заданными настройками игры.
 
@@ -153,10 +155,10 @@ def recognize_text_with_settings(image: np.ndarray, setting_game: SettingGame):
     # Инвертировать белый цвет в черный, потому что OCR чаще обучается на черном тексте а не на белом
     in_image = invert_image_colors(bg_image)
 
-    r_img = in_image
+    res_img = in_image
     # Распознавание текста
-    res_orc_text = perform_ocr(r_img)
-    return res_orc_text, r_img
+    res_orc_text = perform_ocr(res_img)
+    return res_orc_text, res_img
 
 
 def extract_character_dialogue(text: str) -> str:
@@ -203,3 +205,12 @@ def extract_character_dialogue(text: str) -> str:
 
     text_obj["replic"] = replic.strip()
     return text_obj
+
+
+def game_orc(image: np.ndarray, setting_game=SettingGame) -> tuple[str, np.array]:
+    # Распознать текст на изображение
+    res_text, res_image = recognize_text_with_settings(image, setting_game=setting_game)
+    filter_text = extract_character_dialogue(res_text)
+    return filter_text, res_image
+
+
