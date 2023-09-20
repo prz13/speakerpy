@@ -1,3 +1,4 @@
+from collections import deque
 import threading
 import time
 import tkinter as tk
@@ -8,6 +9,9 @@ import cv2
 import keyboard
 import numpy as np
 import pyautogui
+from eyeeaseai.gamesettings import SettingGame
+
+from eyeeaseai.lib_img import EyeEaseAi
 
 # pip install opencv-python keyboard pyautogui silero pytesseract
 
@@ -32,16 +36,27 @@ is_running = False
 
 def take_screenshot(status_bar):
     global is_running
+    ea = EyeEaseAi(setting_game=SettingGame.baldur_gate_3)
+
     i = 0
+    skeep_list = deque()
     while True:
         if is_running:
             print(i)
             screenshot = pyautogui.screenshot()
             screenshot_np = np.array(screenshot)
-            i += 1
-            file_path = dir_scrinshot / f"screenshots_{i}.png"
-            cv2.imwrite(str(file_path), screenshot_np)
+            res_text, res_image = ea.orc_img(screenshot_np)
+            if res_text:
+                skeep_list.append(res_text["replica"])
+                status_bar.set_status(f"Запущено:\n{skeep_list}")
+                ea.speak(skeep_list.popleft())
+            #
+            # file_path = dir_scrinshot / f"screenshots_{i}.png"
+            # cv2.imwrite(str(file_path), screenshot_np)
+            #
             time.sleep(0.5)
+            #
+            i += 1
 
 
 def toggle_screenshot(status_bar):

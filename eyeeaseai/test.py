@@ -58,5 +58,13 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # main()
+    ea = EyeEaseAi(setting_game=SettingGame.baldur_gate_3)
+    print("start")
+    ea.speak(
+        "Не советую туда лезть, если не хочешь, чтоб твои кости аж до Врат Балдура долетели."
+    )
+    ea.speak("Ты тоже за клеймом? Жрица говорит, нас всех надо пометить перед налетом")
+    print("End")
+
     # take_screenshot()

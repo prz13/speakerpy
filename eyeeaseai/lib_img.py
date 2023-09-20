@@ -198,6 +198,9 @@ def extract_character_dialogue(text: str) -> str:
     ]
     if len(text_obj) > 1:
         raise KeyError("Не может быть больше одной реплики")
+    if len(text_obj) == 0:
+        return None
+
     text_obj = text_obj[0]
 
     replica = text_obj["replica"]
@@ -269,7 +272,7 @@ class EyeEaseAi:
         self.sample_rate = settings_selero["ru_man"]["sample_rate"]
         self.setting_game = setting_game
 
-    def orc_img(self, image: np.ndarray) -> tuple[str, np.array]:
+    def orc_img(self, image: np.ndarray) -> tuple[Dialog, np.array]:
         """Распознать текст на изображение
 
         return: Распознанный текст
@@ -279,8 +282,9 @@ class EyeEaseAi:
         )
         # Удалить лишние символы из ответа
         filter_dialog = extract_character_dialogue(res_text)
+
         # Если распознан новый текст, то возвратим его для дальнейшего озвучивания
-        if self.last_res_orc != filter_dialog:
+        if filter_dialog and self.last_res_orc != filter_dialog:
             return filter_dialog, res_image
         else:
             return None, None

@@ -18,6 +18,7 @@ from .lib_helper import timeit
 from .lib_sl_text import SeleroText
 
 
+
 class SpeakerBase:
     #: Для синхронизации потоков озвучки текста
     _th_lock_speak = threading.Lock()
@@ -27,7 +28,7 @@ class SpeakerBase:
         model_id,
         language: Literal["ru", "en"],
         speaker: Literal["aidar", "baya", "kseniya", "xenia", "random"],
-        device="cpu",
+        device="cuda",
     ) -> None:
         self.language = language
         self.model_id = model_id
@@ -85,6 +86,7 @@ class SpeakerBase:
             put_accent=put_accent,
             put_yo=put_yo,
         )
+        print("Конец синтеза")
         return audio
 
     def _speak(
@@ -171,6 +173,7 @@ class Speaker(SpeakerBase):
             put_accent=put_accent,
             put_yo=put_yo,
         )
+        print("!!!")
         self._speak(0, text, audio, sample_rate, speed)
 
     @timeit
